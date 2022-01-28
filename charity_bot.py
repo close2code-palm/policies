@@ -22,6 +22,7 @@ answers2human = {
 }
 
 user_wish = {
+    'theme': 'Reading',
     'to_own': IDK,
     'to_pay': IDK,
     'to_contact': IDK,
@@ -34,20 +35,18 @@ def start(update: Update, context: CallbackContext):
     # Some information push for coordinatcions or news by interest
 
     reply_kb = [[
-        InlineKeyboardButton('📡Cyberspace🪙', callback_data='11'),
-        InlineKeyboardButton('✌🏼Friendship👭', callback_data='12')],
-        [InlineKeyboardButton('🎸🎧Sound🎼🎷', callback_data='13'),
-         InlineKeyboardButton('🤼Competitive⛷', callback_data='14')],
-        [InlineKeyboardButton('📖Reading📚', callback_data='15'),
-         InlineKeyboardButton('🥕Gastronomy 🫑', callback_data='16')],
-        [InlineKeyboardButton('🎰 🎯 Gaming 🎭🎲 ', callback_data=r'1st')]]
+        InlineKeyboardButton('📡Cyberspace🪙', callback_data='Cyberspace'),
+        InlineKeyboardButton('✌🏼Friendship👭', callback_data='Friendship')],
+        [InlineKeyboardButton('🎸🎧Sound🎼🎷', callback_data='Sound'),
+         InlineKeyboardButton('🤼Competitive⛷', callback_data='Competitive')],
+        [InlineKeyboardButton('📖Reading📚', callback_data='Reading'),
+         InlineKeyboardButton('🥕Gastronomy🫑', callback_data='Gastronomy')],
+        [InlineKeyboardButton('🎰 🎯 Gaming 🎭 🎲 ', callback_data='Gaming')]]
 
     update.message.reply_text("Hello! 👋🏼 🧘 \
         🍀 How you wish to change the world?\
         🌍 What does the reality need to be made of?",
-                              reply_markup=InlineKeyboardMarkup(inline_keyboard=reply_kb,  # one_time_keyboard=True,
-                                                                #                                                               input_field_placeholder="The greatest thing in human's life"
-                                                                ))
+                              reply_markup=InlineKeyboardMarkup(inline_keyboard=reply_kb))
 
 
 def help(update: Update, context: CallbackContext):
@@ -56,15 +55,16 @@ def help(update: Update, context: CallbackContext):
 
 
 def button(update: Update, context: CallbackContext) -> None:
-    """Parses the CallbackQuery and updates the message text."""
+    """Parses the CallbackQuery and updates the user dict."""
     query = update.callback_query
 
     # CallbackQueries need to be answered, even if no notification to the user is needed
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     query.answer()
+    user_wish['theme'] = query.data
     # Selected
     # option:
-    query.edit_message_text(text=f"{query.data}")
+    # query.edit_message_text(text=f"{query.data}")
 
 
 def info(update: Update, context: CallbackContext):
@@ -139,9 +139,9 @@ def inline_pray(update: Update, context: CallbackContext):
 
     polite_pls = ["Будьте так любезны", "Прошу вас извинить меня", "Не будете ли вы настолько добры",
                   "Не могли бы вы, пожалуйста"]
-    polite_thx = ["Огромное вам спасибо за всё", "Большое вам спасибо за поддержку",
-                  "Спасибо, это было очень любезно c вашей стороны", "Очень благодарен вам",
-                  "Без вас я бы низачто не справился"]
+    polite_thx = ["Огромное вам спасибо за всё ", "Большое вам спасибо за поддержку ",
+                  "Спасибо, это было очень любезно c вашей стороны ", "Очень благодарен вам ",
+                  "Без вас я бы низачто не справился "]
     polite_apl = ["Уважаемый господин", "Молодой человек", "Дорогой гражданин"]
     polite_greeting = ["Желаю вам доброго дня!", "Невыразимо рад вас видеть!",
                        "Привествую от всего сердца!", "Здравствуйте, спасибо за коннект!", ]
@@ -203,6 +203,7 @@ def main():
     disp.add_handler(CommandHandler('info', info))
     disp.add_handler(CommandHandler('op_ends', op_ends))
     disp.add_handler(CallbackQueryHandler(button))
+    disp.add_handler(yn_questnry)
     disp.add_handler(InlineQueryHandler(inline_pray))
 
     updater.start_polling()
