@@ -1,11 +1,10 @@
-import logging
 import random
 from uuid import uuid4
 
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineQueryResultArticle, \
-    InputTextMessageContent, ParseMode
-from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, InlineQueryHandler
-from telegram.utils.helpers import escape_markdown
+    InputTextMessageContent, InlineKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, CallbackContext, InlineQueryHandler, CallbackQueryHandler, Filters, \
+    ConversationHandler, MessageHandler
 
 API_KEY = "2132128213:AAFWw2QEvv_RU2UWyvUYygs2MrcG85ehi8Q"
 
@@ -13,9 +12,14 @@ API_KEY = "2132128213:AAFWw2QEvv_RU2UWyvUYygs2MrcG85ehi8Q"
 
 # feedback about product
 
-OWN, DONATE, TALK_W_AUTHOR, MODERATE = range(4)
+OWN, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(5)
 
 IDK, NO, YES = range(-1, 2)
+answers2human = {
+    '✅Yes': YES,
+    '❌No': NO,
+    "💁🏽I don't know": IDK
+}
 
 user_wish = {
     'to_own': IDK,
@@ -29,19 +33,38 @@ def start(update: Update, context: CallbackContext):
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
-    reply_kb = [['Cyberspace🪙', 'Friendship👭', '🎸🎧Sound🎼🎷', 'Competitive🤼⛷', 'Reading📚',
-                 'Gastronomy🥕🫑', '🎰🎯Gaming🎭🎲']]
+    reply_kb = [[
+        InlineKeyboardButton('📡Cyberspace🪙', callback_data='11'),
+        InlineKeyboardButton('✌🏼Friendship👭', callback_data='12')],
+        [InlineKeyboardButton('🎸🎧Sound🎼🎷', callback_data='13'),
+         InlineKeyboardButton('🤼Competitive⛷', callback_data='14')],
+        [InlineKeyboardButton('📖Reading📚', callback_data='15'),
+         InlineKeyboardButton('🥕Gastronomy 🫑', callback_data='16')],
+        [InlineKeyboardButton('🎰 🎯 Gaming 🎭🎲 ', callback_data=r'1st')]]
 
     update.message.reply_text("Hello! 👋🏼 🧘 \
         🍀 How you wish to change the world?\
-        🌍 What does the Earth need?",
-                              reply_markup=ReplyKeyboardMarkup(reply_kb, one_time_keyboard=True,
-                                                               input_field_placeholder="The greatest thing in human's life"))
+        🌍 What does the reality need to be made of?",
+                              reply_markup=InlineKeyboardMarkup(inline_keyboard=reply_kb,  # one_time_keyboard=True,
+                                                                #                                                               input_field_placeholder="The greatest thing in human's life"
+                                                                ))
 
 
 def help(update: Update, context: CallbackContext):
-    update.message.reply_text("Just choose from proposed and make a donation💴💰.\
-    You can contact owner here: @lolyge")
+    update.message.reply_text("Just choose from proposed and make a donation💴💰."
+                              "You can contact owner here: @lolyge")
+
+
+def button(update: Update, context: CallbackContext) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    query.answer()
+    # Selected
+    # option:
+    query.edit_message_text(text=f"{query.data}")
 
 
 def info(update: Update, context: CallbackContext):
@@ -49,15 +72,47 @@ def info(update: Update, context: CallbackContext):
                               help of Maecenas's❤ partials. 💻 Author: JKD. Made for public use.")
 
 
-def want(update: Update, ctxt: CallbackContext):
-    """Creates the dialog with user, saving his looks(dict) associated with user_id in database"""
+def wants(update: Update, ctxt: CallbackContext):
+    # add checks for allready known user
+    # possible solution wia custom context, much more effective way
+    """serie of questions to save people attitude to the thread and project, 1 by 1
+    Creates the dialog with user, saving his looks(dict) associated with user_id in database"""
     yn_keyboard = ReplyKeyboardMarkup([['✅Yes', '❌No'], ["💁🏽I don't know"]], resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
-    update.message.reply_text("1. 👑 Do you wan't to own alike bot?\n"
-                              "2. 🤑 Do you wan't to enrich this bot and his owner?\n"
-                              "3. 💌 Do you wan't to contact with creator of this bot?\n"
-                              "4. ✊🏼  Do you wan't to direct and learn more about our goals?\n",
+    update.message.reply_text("1. 👑 Do you wan't to own alike bot?\n",
                               reply_markup=yn_keyboard)
+    return OWN
+
+
+def want2(updt: Update, ctxt: CallbackContext):
+    updt.message.reply_text("2. 🤑 Do you wan't to enrich this bot and his owner?\n")
+    user_wish['to_own'] = answers2human[updt.message.text]
+    return DONATE
+
+
+def want3(updt: Update, ctxt: CallbackContext):
+    updt.message.reply_text("3. 💌 Do you wan't to contact with creator of this bot?\n")
+    user_wish['to_pay'] = answers2human[updt.message.text]
+    return TALK_W_AUTHOR
+
+
+def want4(updt: Update, ctxt: CallbackContext):
+    updt.message.reply_text("4. ✊🏼  Do you wan't to direct and learn more about our goals?\n", )
+    user_wish['to_contact'] = answers2human[updt.message.text]
+    return MODERATE
+
+
+def wantl(updt: Update, ctxt: CallbackContext):
+    updt.message.reply_text("5. 📂 Do you wan't your choices and interests to be stored in our database?")
+    user_wish['to_direct'] = answers2human[updt.message.text]
+    return SAVE_PRIVACY
+
+
+def save(updt: Update, ctxt: CallbackContext):
+    """database writing answers for statistic"""
+    updt.message.reply_text('🌈As you wish✨',
+                            reply_markup=ReplyKeyboardRemove())
+    pass
 
 
 def recieve_money():
@@ -72,15 +127,16 @@ def op_ends(update: Update, contxt: CallbackContext):
 
 
 def inline_pray(update: Update, context: CallbackContext):
-    #TODO insert names into text dynamicly
-    #TODO switching modes (business, friendly, sarcasm, etc.)
+    # TODO insert names into text dynamicly
+    # TODO switching modes (business, friendly, sarcasm, etc.)
     """Create some texts which made from affirmations, auto-training and self-hypnosis"""
+    # TODO make responsible for requested phrase, send via preview
     # inl_qur = update.inline_query.query
 
     query = update.inline_query.query
+    # if query == "":
+    #     return
 
-    if query == "":
-        return
     polite_pls = ["Будьте так любезны", "Прошу вас извинить меня", "Не будете ли вы настолько добры",
                   "Не могли бы вы, пожалуйста"]
     polite_thx = ["Огромное вам спасибо за всё", "Большое вам спасибо за поддержку",
@@ -89,12 +145,12 @@ def inline_pray(update: Update, context: CallbackContext):
     polite_apl = ["Уважаемый господин", "Молодой человек", "Дорогой гражданин"]
     polite_greeting = ["Желаю вам доброго дня!", "Невыразимо рад вас видеть!",
                        "Привествую от всего сердца!", "Здравствуйте, спасибо за коннект!", ]
+    # polite_goodbuys = []
     results = [
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Пожалуйста",
-            # input_message_content=InputTextMessageContent(query.upper()),
-            input_message_content=InputTextMessageContent("🙏🏼 🥺" + random.choice(polite_pls))
+            input_message_content=InputTextMessageContent("🙏🏼 🥺" + random.choice(polite_pls) + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
@@ -102,58 +158,52 @@ def inline_pray(update: Update, context: CallbackContext):
             # input_message_content=InputTextMessageContent(
             #     f"*{escape_markdown(query)}*", parse_mode=ParseMode.MARKDOWN
             # ),
-            input_message_content=InputTextMessageContent( "☺️" + random.choice(polite_thx))
+            input_message_content=InputTextMessageContent("☺️" + random.choice(polite_thx) + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Обращение",
-            # input_message_content=InputTextMessageContent(
-            #     f"_{escape_markdown(query)}_", parse_mode=ParseMode.MARKDOWN
-            # ),
-            input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl))
+            input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Приветствие",
-            # input_message_content=InputTextMessageContent(
-            #     f"_{escape_markdown(query)}_", parse_mode=ParseMode.MARKDOWN
-            # ),
-            # input_message_content=InputTextMessageContent(random.choice(polite_apl))
-            input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting))
+            input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting) + query)
         )
     ]
 
     update.inline_query.answer(results)
 
 
-#
-# def inline_font(update: Update, context: CallbackContext):
-#     query = update.inline_query.query
-#     if query == "":
-#         return
-#     results = [
-#         InlineQ
-#     ]
-
+# TODO need to add customization, person-styled scripts
 
 def main():
+    """Dirty machinery"""
     updater = Updater(API_KEY)
 
     disp = updater.dispatcher
 
+    yn_filter = Filters.regex("^(✅Yes|❌No|💁🏽I don't know)$")
+
+    yn_questnry = ConversationHandler(
+        entry_points=[CommandHandler('wants', wants)],
+        states={
+            OWN: [MessageHandler(yn_filter, want2)],
+            DONATE: [MessageHandler(yn_filter, want3)],
+            TALK_W_AUTHOR: [MessageHandler(yn_filter, want4)],
+            MODERATE: [MessageHandler(yn_filter, wantl)],
+            SAVE_PRIVACY: [MessageHandler(yn_filter, save)],
+        },
+        fallbacks=[]
+    )
+
+    # bug on update error
     disp.add_handler(CommandHandler("help", help))
     disp.add_handler(CommandHandler('start', start))
     disp.add_handler(CommandHandler('info', info))
     disp.add_handler(CommandHandler('op_ends', op_ends))
+    disp.add_handler(CallbackQueryHandler(button))
     disp.add_handler(InlineQueryHandler(inline_pray))
-
-    # conv_handler = ConversationHandler(
-    #     entry_points=[CommandHandler('start', start)],
-    #     states=
-    # )
-    # usage_conv_hndlr = ConversationHandler(
-    #     entry_points=[CommandHandler('want', want)]
-    # )
 
     updater.start_polling()
 
