@@ -1,6 +1,7 @@
 import random
 from uuid import uuid4
 
+import psycopg2 as psycopg2
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineQueryResultArticle, \
     InputTextMessageContent, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, CallbackContext, InlineQueryHandler, CallbackQueryHandler, Filters, \
@@ -16,9 +17,9 @@ OWN, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(5)
 
 IDK, NO, YES = range(-1, 2)
 answers2human = {
-    '✅Yes': YES,
-    '❌No': NO,
-    "💁🏽I don't know": IDK
+    '✅  Yes': YES,
+    '❌  No': NO,
+    "💁🏽  I don't know": IDK
 }
 
 user_wish = {
@@ -31,6 +32,8 @@ user_wish = {
 
 
 def start(update: Update, context: CallbackContext):
+    #TODO make interface more guided through usability, not flashing from start
+    #TODO place check for allready registerred, to UPDATE or restrict
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
@@ -43,7 +46,7 @@ def start(update: Update, context: CallbackContext):
          InlineKeyboardButton('🥕Gastronomy🫑', callback_data='Gastronomy')],
         [InlineKeyboardButton('🎰 🎯 Gaming 🎭 🎲 ', callback_data='Gaming')]]
 
-    update.message.reply_text("Hello! 👋🏼 🧘 \
+    update.message.reply_text("Hello! 👋🏼 🧘\
         🍀 How you wish to change the world?\
         🌍 What does the reality need to be made of?",
                               reply_markup=InlineKeyboardMarkup(inline_keyboard=reply_kb))
@@ -72,12 +75,13 @@ def info(update: Update, context: CallbackContext):
                               help of Maecenas's❤ partials. 💻 Author: JKD. Made for public use.")
 
 
+# TODO fix regex, add interests there
 def wants(update: Update, ctxt: CallbackContext):
     # add checks for allready known user
     # possible solution wia custom context, much more effective way
     """serie of questions to save people attitude to the thread and project, 1 by 1
     Creates the dialog with user, saving his looks(dict) associated with user_id in database"""
-    yn_keyboard = ReplyKeyboardMarkup([['✅Yes', '❌No'], ["💁🏽I don't know"]], resize_keyboard=True,
+    yn_keyboard = ReplyKeyboardMarkup([['✅  Yes', '❌  No'], ["💁🏽  I don't know"]], resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
     update.message.reply_text("1. 👑 Do you wan't to own alike bot?\n",
                               reply_markup=yn_keyboard)
@@ -112,7 +116,21 @@ def save(updt: Update, ctxt: CallbackContext):
     """database writing answers for statistic"""
     updt.message.reply_text('🌈As you wish✨',
                             reply_markup=ReplyKeyboardRemove())
-    pass
+
+    conn = psycopg2.connect(database='chares',
+                            user='charecommander',
+                            password='tob1',
+                            host='localhost',
+                            port='5433')
+    cur = conn.cursor()
+    raw_sql = '''INSERT INTO public.char_wants (user_id, w_t_own, w_t_pay,
+    theme,w_t_contact,w_t_direct) VALUES (%s,%s,%s,%s,%s,%s)'''
+    cur.execute(raw_sql, (updt.message.from_user.id,
+                          user_wish['to_own'], user_wish['to_pay'],
+                          user_wish['theme'], user_wish['to_contact'], user_wish['to_direct']))
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def recieve_money():
@@ -136,7 +154,7 @@ def inline_pray(update: Update, context: CallbackContext):
     query = update.inline_query.query
     # if query == "":
     #     return
-
+    # TODO english payloads, to make THIS BROBOT more accessible and usefull. and sure, to keep style clean
     polite_pls = ["Будьте так любезны", "Прошу вас извинить меня", "Не будете ли вы настолько добры",
                   "Не могли бы вы, пожалуйста"]
     polite_thx = ["Огромное вам спасибо за всё ", "Большое вам спасибо за поддержку ",
@@ -183,7 +201,7 @@ def main():
 
     disp = updater.dispatcher
 
-    yn_filter = Filters.regex("^(✅Yes|❌No|💁🏽I don't know)$")
+    yn_filter = Filters.regex("^(✅  Yes|❌  No|💁🏽  I don't know)$")
 
     yn_questnry = ConversationHandler(
         entry_points=[CommandHandler('wants', wants)],
