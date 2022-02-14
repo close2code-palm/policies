@@ -15,6 +15,8 @@ API_KEY = "2132128213:AAFWw2QEvv_RU2UWyvUYygs2MrcG85ehi8Q"
 
 OWN, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(5)
 
+ASKED_THROUGH = False
+
 IDK, NO, YES = range(-1, 2)
 answers2human = {
     '✅  Yes': YES,
@@ -27,13 +29,14 @@ user_wish = {
     'to_own': IDK,
     'to_pay': IDK,
     'to_contact': IDK,
-    'to_direct': IDK
+    'to_direct': IDK,
+    'asked': False
 }
 
 
 def start(update: Update, context: CallbackContext):
-    #TODO make interface more guided through usability, not flashing from start
-    #TODO place check for allready registerred, to UPDATE or restrict
+    # TODO make interface more guided through usability, not flashing from start
+    # TODO place check for allready registerred, to UPDATE or restrict
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
@@ -52,9 +55,15 @@ def start(update: Update, context: CallbackContext):
                               reply_markup=InlineKeyboardMarkup(inline_keyboard=reply_kb))
 
 
+def sure(updt: Update, clbckctxt: CallbackContext):
+    """Enusures user to overwrite existing data"""
+    pass
+
+
 def help(update: Update, context: CallbackContext):
-    update.message.reply_text("Just choose from proposed and make a donation💴💰."
-                              "You can contact owner here: @lolyge")
+    update.message.reply_text("Just choose from proposed."
+                              "📱 You can contact owner here: @lolyge 🏄🏽‍♂️ "
+                              "🦾 Bots , crawlers 🕷, automation 🎛")
 
 
 def button(update: Update, context: CallbackContext) -> None:
@@ -71,8 +80,8 @@ def button(update: Update, context: CallbackContext) -> None:
 
 
 def info(update: Update, context: CallbackContext):
-    update.message.reply_text("👯 🤖 This Bot was made to save human wishes and lives with a \
-                              help of Maecenas's❤ partials. 💻 Author: JKD. Made for public use.")
+    update.message.reply_text("👯 🤖 This Bot was made to save human wishes and lives with a politness. \
+                             Made just by help of Maecenas's❤ partials. 💻 Author: JKD. Made for public use.")
 
 
 # TODO fix regex, add interests there
@@ -113,9 +122,14 @@ def wantl(updt: Update, ctxt: CallbackContext):
 
 
 def save(updt: Update, ctxt: CallbackContext):
-    """database writing answers for statistic"""
+    """Database writing answers for statistic.
+    Writes data regarding user's choice"""
     updt.message.reply_text('🌈As you wish✨',
                             reply_markup=ReplyKeyboardRemove())
+
+    user_id = updt.message.from_user.id
+    sql_arg_lst = [user_wish['to_own'], user_wish['to_pay'],
+                       user_wish['theme'], user_wish['to_contact'], user_wish['to_direct'], user_id]
 
     conn = psycopg2.connect(database='chares',
                             user='charecommander',
@@ -123,11 +137,21 @@ def save(updt: Update, ctxt: CallbackContext):
                             host='localhost',
                             port='5433')
     cur = conn.cursor()
-    raw_sql = '''INSERT INTO public.char_wants (user_id, w_t_own, w_t_pay,
-    theme,w_t_contact,w_t_direct) VALUES (%s,%s,%s,%s,%s,%s)'''
-    cur.execute(raw_sql, (updt.message.from_user.id,
-                          user_wish['to_own'], user_wish['to_pay'],
-                          user_wish['theme'], user_wish['to_contact'], user_wish['to_direct']))
+    if user_wish['asked'] == True:
+        raw_sql = f'''UPDATE public.char_wants 
+        SET w_t_own = %s,
+            w_t_pay = %s, 
+            theme = %s,
+            w_t_contact = %s,
+            w_t_direct = %s
+        WHERE user_id = %s;'''
+
+        cur.execute(raw_sql, sql_arg_lst)
+    else:
+        raw_sql = '''INSERT INTO public.char_wants (user_id, w_t_own, w_t_pay,
+    theme,w_t_contact,w_t_direct) VALUES (%s,%s,%s,%s,%s,%s);'''
+        cur.execute(raw_sql, (sql_arg_lst[-1], sql_arg_lst[:-1]))
+        user_wish['asked'] = True
     conn.commit()
     cur.close()
     conn.close()
@@ -160,9 +184,9 @@ def inline_pray(update: Update, context: CallbackContext):
     polite_thx = ["Огромное вам спасибо за всё ", "Большое вам спасибо за поддержку ",
                   "Спасибо, это было очень любезно c вашей стороны ", "Очень благодарен вам ",
                   "Без вас я бы низачто не справился "]
-    polite_apl = ["Уважаемый господин", "Молодой человек", "Дорогой гражданин"]
+    polite_apl = ["Уважаемый господин, ", "Молодой человек, ", "Дорогой гражданин, "]
     polite_greeting = ["Желаю вам доброго дня!", "Невыразимо рад вас видеть!",
-                       "Привествую от всего сердца!", "Здравствуйте, спасибо за коннект!", ]
+                       "Приветствую от всего сердца!", "Здравствуйте, спасибо за коннект!", ]
     # polite_goodbuys = []
     results = [
         InlineQueryResultArticle(
@@ -180,7 +204,7 @@ def inline_pray(update: Update, context: CallbackContext):
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Обращение",
+            title="Обращение, <текст>",
             input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + query)
         ),
         InlineQueryResultArticle(
