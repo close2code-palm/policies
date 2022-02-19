@@ -209,24 +209,30 @@ def inline_pray(update: Update, context: CallbackContext):
     #     return
     # TODO english payloads, to make THIS BROBOT more accessible and usefull. and sure, to keep style clean
     # TODO add emojis
-    polite_pls = ["Будьте так любезны ", "Прошу вас извинить меня ", "Не будете ли вы настолько добры ",
-                  "Не могли бы вы, пожалуйста "]
-    polite_thx = ["Огромное вам спасибо за всё ", "Большое вам спасибо за поддержку ",
-                  "Спасибо, это было очень любезно c вашей стороны ", "Очень благодарен вам ",
-                  "Без вас я бы низачто не справился "]
-    polite_apl = ["Уважаемый господин, ", "Молодой человек, ", "Дорогой гражданин, "]
-    polite_greeting = ["Желаю вам доброго дня!", "Невыразимо рад вас видеть!",
-                       "Приветствую от всего сердца!", "Здравствуйте, спасибо за коннект!", ]
-    # polite_goodbuys = []
+    polite_pls = ["Be so kind ", "Please excuse me ", "Would you be so kind ",
+                  "Could you please ", "We would appreciate it if you would "]
+    polite_thx = ["Thank you so much for everything.", "Thank you very much for your support.",
+                  "Thank you, that was very kind of you. ", "I sincerely thank you.",
+                  "I wouldn't have made it without you."]
+    polite_apl = ["Dear sir, ", "Dear Gentleman, ", "Dear Citizen, "]
+    polite_greeting = ["I wish you a good day!", "Incredibly glad to see you!",
+                       "Greetings from the bottom of my heart!", "Hello, thanks for the contact!", ]
+    polite_goodbuys = ["Hope we meet again soon.", "I was very happy to meet you!",
+                       "I would like our communication to remain as warm"]
     results = [
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Пожалуйста ...",
+            title="Eloquent good buys",
+            input_message_content=InputTextMessageContent(" 👋🏼 🕺🏽 " + random.choice(polite_goodbuys) + query)
+        ),
+        InlineQueryResultArticle(
+            id=str(uuid4()),
+            title="Please <your text>",
             input_message_content=InputTextMessageContent("🙏🏼 🥺" + random.choice(polite_pls) + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Благодарность(выразительная)",
+            title="Eloquent gratitude",
             # input_message_content=InputTextMessageContent(
             #     f"*{escape_markdown(query)}*", parse_mode=ParseMode.MARKDOWN
             # ),
@@ -234,12 +240,12 @@ def inline_pray(update: Update, context: CallbackContext):
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Обращение, <текст>",
+            title="Address, <your text>",
             input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Приветствие(выразительное)",
+            title="Eloquent greetings",
             input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting) + query)
         )
     ]
