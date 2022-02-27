@@ -1,4 +1,5 @@
 import random
+import re
 from uuid import uuid4
 
 import psycopg2 as psycopg2
@@ -7,14 +8,16 @@ from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineQu
 from telegram.ext import Updater, CommandHandler, CallbackContext, InlineQueryHandler, CallbackQueryHandler, Filters, \
     ConversationHandler, MessageHandler
 
-API_KEY = "2132128213:AAFWw2QEvv_RU2UWyvUYygs2MrcG85ehi8Q"
+from config import TELEGRAM_BOT_API_KEY, DB_UN, DB_PW
 
-# CREDO, PAYMENT,
+API_KEY = TELEGRAM_BOT_API_KEY
+
+# TODO security fix to separate APIKEY and DB creds from main file
+# TODO Separate 3 different bots: inliner, hypnotalker and charity_taker
 
 # feedback about product
 
-# TODO take away markups
-OWN, THEME,KBSWITCH, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(7)
+OWN, THEME, KBSWITCH, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(7)
 
 ASKED_THROUGH = False
 
@@ -53,22 +56,6 @@ def start(update: Update, context: CallbackContext):
 def help(update: Update, context: CallbackContext):
     update.message.reply_text("▶️Just choose from proposed to answer\n"
                               "or just inline to impress. 💫")
-
-
-#  totaly forgoten functionality
-# <SAFE DELETE THIS>
-# GET WHAT IT IS IF POSSIBLE
-# def button(update: Update, context: CallbackContext) -> None:
-#     """Parses the CallbackQuery and updates the user dict."""
-#     query = update.callback_query
-#
-#     # CallbackQueries need to be answered, even if no notification to the user is needed
-#     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-#     query.answer()
-#     user_wish['theme'] = query.data
-#     # Selected
-#     # option:
-#     # query.edit_message_text(text=f"{query.data}")
 
 
 def info(update: Update, context: CallbackContext):
@@ -111,7 +98,7 @@ def want1(updt: Update, ctxt: CallbackContext):
 def want2(updt: Update, ctxt: CallbackContext):
     "Working up on button pressed and continues dialog"
     qury = updt.callback_query
-    user_wish['theme'] = qury
+    user_wish['theme'] = qury.data
     qury.answer()
 
     qury.edit_message_text(text=f'That is a nice choice. Want to ask you about things. Just say \'OK\'.')
@@ -120,9 +107,10 @@ def want2(updt: Update, ctxt: CallbackContext):
 
 def want2_to_3(updt: Update, ctxt: CallbackContext):
     """Makes transition to reply from inline"""
+    updt.message.reply_sticker('CAACAgIAAxkBAAEDYmZhpUEeM46qYBlLZU1ifmG3yDOUHwACYAYAAvoLtgg_BZcxRs21uyIE')
     yn_keyboard = ReplyKeyboardMarkup(yn_kb_mu, resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
-    updt.message.reply_text("3. 🤑 Do you wan't to enrich this bot and his owner?\n", reply_markup= yn_keyboard)
+    updt.message.reply_text("3. 🤑 Do you wan't to enrich this bot and his owner?\n", reply_markup=yn_keyboard)
     return DONATE
 
 
@@ -155,8 +143,8 @@ def save(updt: Update, ctxt: CallbackContext):
                    user_wish['theme'], user_wish['to_contact'], user_wish['to_direct'], str(user_id)]
 
     conn = psycopg2.connect(database='chares',
-                            user='charecommander',
-                            password='tob1',
+                            user= DB_UN,
+                            password= DB_PW,
                             host='localhost',
                             port='5433')
     cur = conn.cursor()
@@ -166,6 +154,7 @@ def save(updt: Update, ctxt: CallbackContext):
     cur.execute(is_known_sql, (str(user_id),))
     user_dt_in_db = cur.fetchone()
     if user_dt_in_db is not None:
+        # TODO bug with overwritting existing user answers from user to DB
         raw_sql = f'''UPDATE public.char_wants 
         SET w_t_own = %s,
             w_t_pay = %s, 
@@ -177,9 +166,9 @@ def save(updt: Update, ctxt: CallbackContext):
         cur.execute(raw_sql, sql_arg_lst)
 
     else:
-            raw_sql = '''INSERT INTO public.char_wants (user_id, w_t_own, w_t_pay,
+        raw_sql = '''INSERT INTO public.char_wants (user_id, w_t_own, w_t_pay,
         theme,w_t_contact,w_t_direct) VALUES (%s,%s,%s,%s,%s,%s);'''
-            cur.execute(raw_sql, (sql_arg_lst[-1], *sql_arg_lst[:-1]))
+        cur.execute(raw_sql, (sql_arg_lst[-1], *sql_arg_lst[:-1]))
     conn.commit()
     cur.close()
     conn.close()
@@ -191,7 +180,6 @@ def recieve_money():
 
 
 def op_ends(update: Update, contxt: CallbackContext):
-    update.message.reply_sticker('CAACAgIAAxkBAAEDYmZhpUEeM46qYBlLZU1ifmG3yDOUHwACYAYAAvoLtgg_BZcxRs21uyIE')
     "Thank you!🤝 Watch for news in your thread!"
     pass
 
@@ -264,8 +252,8 @@ def main():
     # cbd_fltr = Filters.regex("^(Cyberspace|Friendship|Sound|Competitive|Reading|Gastronomy|Gaming)$")
     cbd_fltr = "^(Cyberspace|Friendship|Sound|Competitive|Reading|Gastronomy|Gaming)$"
     yn_filter = Filters.regex("^(✅  Yes|❌  No|💁🏽  I don't know)$")
-    thm_filter = Filters.regex("^(🎰 🎯 Gaming 🎭 🎲 |📡Cyberspace🪙|🎸🎧Sound🎼🎷|"
-                               "🤼Competitive⛷|📖Reading📚|🥕Gastronomy🫑)$")
+    # thm_filter = Filters.regex("^(🎰 🎯 Gaming 🎭 🎲 |📡Cyberspace🪙|🎸🎧Sound🎼🎷|"
+    #                            "🤼Competitive⛷|📖Reading📚|🥕Gastronomy🫑)$")
 
     yn_questnry = ConversationHandler(
         entry_points=[CommandHandler('wants', wants)],
