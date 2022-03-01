@@ -54,7 +54,7 @@ def start(update: Update, context: CallbackContext):
 
 def help(update: Update, context: CallbackContext):
     update.message.reply_text("▶️Just choose from proposed to answer\n"
-                              "or just inline to impress. 💫")
+                              "or just inline @smart_abbot to impress with your manners. 💫")
 
 
 def info(update: Update, context: CallbackContext):
