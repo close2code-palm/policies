@@ -1,5 +1,4 @@
 import random
-import re
 from uuid import uuid4
 
 import psycopg2 as psycopg2
@@ -46,10 +45,10 @@ def start(update: Update, context: CallbackContext):
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
-    update.message.reply_text("Hello! 👋🏼"
-                              "How you wish to change the world? 🌍 "
-                              "What does the reality need to be made of? 🌌"
-                              "Let us improve the messaging with some recherche words! 🧘 "
+    update.message.reply_text("Hello! 👋🏼")
+    update.message.reply_text("How you wish to change the world? 🌍 \n"
+                              "What does the reality need to be made of? 🌌\n"
+                              "Let us improve the messaging with some recherche words! 🧘 \n"
                               "🍀 Make the machines take our bulk to give us a possibility improve ourselves!")
 
 
@@ -61,7 +60,11 @@ def help(update: Update, context: CallbackContext):
 def info(update: Update, context: CallbackContext):
     """Information about application"""
     update.message.reply_text("👯 🤖 This Bot was made to save human wishes and lives with a politness."
-                              " Made just by help of Maecenas's❤ partials.\n 💻 Author: JKD. Made for public use."
+                              " Made just by help of Maecenas's❤ partials.\n "
+                              "You can buy me a coffee! ☕️"
+                              "https://www.buymeacoffee.com/greettheworldK")
+
+    update.message.reply_text("💻 Author: JKD. Made for public use."
                               "📱 You can contact\n🏄🏽‍♂ owner here: @lolyge "
                               "🦾 Bots , crawlers 🕷, automation 🎛")
 
