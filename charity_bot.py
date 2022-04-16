@@ -1,4 +1,6 @@
+import itertools
 import random
+from typing import List
 from uuid import uuid4
 
 import psycopg2 as psycopg2
@@ -76,7 +78,7 @@ def wants(update: Update, ctxt: CallbackContext):
     Creates the dialog with user, saving his looks(dict) associated with user_id in database"""
     yn_keyboard = ReplyKeyboardMarkup(yn_kb_mu, resize_keyboard=True,
                                       one_time_keyboard=True, input_field_placeholder='Be grace to yourselves...')
-    update.message.reply_text("1. 👑 Do you wan't to own alike bot?\n",
+    update.message.reply_text("1. 👑 Do you want to own alike bot?\n",
                               reply_markup=yn_keyboard)
     return OWN
 
@@ -104,7 +106,8 @@ def want2(updt: Update, ctxt: CallbackContext):
     user_wish['theme'] = qury.data
     qury.answer()
 
-    qury.edit_message_text(text=f'That is a nice choice. Want to ask you about things. Just say \'OK\'.')
+    qury.edit_message_text(text=f'That is a nice choice. This will be used for latter good tiding app as '
+                                f'development will go further. Want to ask you about things. Just say \'OK\'.')
     return KBSWITCH
 
 
@@ -113,24 +116,24 @@ def want2_to_3(updt: Update, ctxt: CallbackContext):
     updt.message.reply_sticker('CAACAgIAAxkBAAEDYmZhpUEeM46qYBlLZU1ifmG3yDOUHwACYAYAAvoLtgg_BZcxRs21uyIE')
     yn_keyboard = ReplyKeyboardMarkup(yn_kb_mu, resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
-    updt.message.reply_text("3. 🤑 Do you wan't to enrich this bot and his owner?\n", reply_markup=yn_keyboard)
+    updt.message.reply_text("3. 🤑 Do you want to enrich this bot and his owner?\n", reply_markup=yn_keyboard)
     return DONATE
 
 
 def want3(updt: Update, ctxt: CallbackContext):
-    updt.message.reply_text("4. 💌 Do you wan't to contact with creator of this bot?\n")
+    updt.message.reply_text("4. 💌 Do you want to contact with creator of this bot?\n")
     user_wish['to_pay'] = answers2human[updt.message.text]
     return TALK_W_AUTHOR
 
 
 def want4(updt: Update, ctxt: CallbackContext):
-    updt.message.reply_text("5. ✊🏼  Do you wan't to direct and learn more about our goals?\n", )
+    updt.message.reply_text("5. ✊🏼  Do you want to direct and learn more about our goals?\n", )
     user_wish['to_contact'] = answers2human[updt.message.text]
     return MODERATE
 
 
 def wantl(updt: Update, ctxt: CallbackContext):
-    updt.message.reply_text("6. 📂 Do you wan't your choices and interests to be stored in our database?")
+    updt.message.reply_text("6. 📂 Do you want your choices and interests to be stored in our database?")
     user_wish['to_direct'] = answers2human[updt.message.text]
     return SAVE_PRIVACY
 
@@ -146,9 +149,11 @@ def save(updt: Update, ctxt: CallbackContext):
                    user_wish['theme'], user_wish['to_contact'], user_wish['to_direct'], str(user_id)]
 
     conn = psycopg2.connect(database='chares',
-                            user= DB_UN,
-                            password= DB_PW,
-                            host='localhost',
+                            user=DB_UN,
+                            password=DB_PW,
+                            # host='192.168.0.162',
+                            # host='0.0.0.0',
+                            host='127.0.0.1',
                             port='5433')
     cur = conn.cursor()
 
@@ -158,6 +163,7 @@ def save(updt: Update, ctxt: CallbackContext):
     user_dt_in_db = cur.fetchone()
     if user_dt_in_db is not None:
         # TODO bug with overwritting existing user answers from user to DB
+        # is it still a problem
         raw_sql = f'''UPDATE public.char_wants 
         SET w_t_own = %s,
             w_t_pay = %s, 
@@ -187,8 +193,12 @@ def op_ends(update: Update, contxt: CallbackContext):
     pass
 
 
+def custom_sample(update: Update, cntxt: CallbackContext):
+    """adds some custom phrases for user or group of users"""
+
+
 def inline_pray(update: Update, context: CallbackContext):
-    # TODO insert names into text dynamicly
+    # TODO insert names into text dynamicly, possibly, with reply to
     # TODO switching modes (business, friendly, sarcasm, etc.)
     """Create some texts which made from affirmations, auto-training and self-hypnosis"""
     # TODO make responsible for requested phrase, send via preview
@@ -210,16 +220,34 @@ def inline_pray(update: Update, context: CallbackContext):
                        "Greetings from the bottom of my heart!", "Hello, thanks for the contact!", ]
     polite_goodbuys = ["Hope we meet again soon.", "I was very happy to meet you!",
                        "I would like our communication to remain as warm"]
-    results = [
+    all_p = [polite_greeting + polite_apl + polite_pls + polite_thx + polite_goodbuys]
+    all_p_sl = itertools.chain.from_iterable(all_p)
+
+    def prefrm(plts: List[str], syms, add_qr: bool = False) -> None:
+        """preparing strings for messaging"""
+        for s in plts:
+            s = syms + s
+            if add_qr:
+                s += " {qr}"
+
+    prefrm(polite_greeting, " 👋🏼 ")
+    prefrm(polite_apl, " 👉🏽 👇🏾 👈🏻 ", True)
+    prefrm(polite_pls, "🙏🏼 🥺 ", True)
+    prefrm(polite_thx, "☺️")
+    prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
+    # TODO make preview of possible texts via results_que:
+    # results will be made of matches, then just popular or genral
+    # results = [], then .append for each func call it will return new result
+    results_on_empt = [
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Eloquent good buys",
-            input_message_content=InputTextMessageContent(" 👋🏼 🕺🏽 " + random.choice(polite_goodbuys) + query)
+            input_message_content=InputTextMessageContent(" 👋🏼 🕺🏽 " + random.choice(polite_goodbuys) + " " + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Please <your text>",
-            input_message_content=InputTextMessageContent("🙏🏼 🥺" + random.choice(polite_pls) + query)
+            input_message_content=InputTextMessageContent("🙏🏼 🥺 " + random.choice(polite_pls) + " " + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
@@ -227,21 +255,36 @@ def inline_pray(update: Update, context: CallbackContext):
             # input_message_content=InputTextMessageContent(
             #     f"*{escape_markdown(query)}*", parse_mode=ParseMode.MARKDOWN
             # ),
-            input_message_content=InputTextMessageContent("☺️" + random.choice(polite_thx) + query)
+            input_message_content=InputTextMessageContent("☺️" + random.choice(polite_thx) + " " + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Address, <your text>",
-            input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + query)
+            input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + " " + query)
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Eloquent greetings",
-            input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting) + query)
+            input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting) + " " + query)
         )
     ]
 
-    update.inline_query.answer(results)
+    def fnd(qr: query) -> List[str]:
+        """looking for  in patterns"""
+        mtchs = []
+        for phrs in all_p_sl:
+            if qr in phrs:
+                mtchs.append(phrs)
+        return mtchs
+
+    results = [InlineQueryResultArticle(id=str(uuid4()), title=fl_phrs,
+                                        input_message_content=InputTextMessageContent(fl_phrs.format(query)))
+               for fl_phrs in fnd(query)]
+
+    if query == "":
+        update.inline_query.answer(results_on_empt)
+    else:
+        update.inline_query.answer(results)
 
 
 # TODO need to add customization, person-styled scripts
