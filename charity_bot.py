@@ -197,6 +197,15 @@ def custom_sample(update: Update, cntxt: CallbackContext):
     """adds some custom phrases for user or group of users"""
 
 
+def prefrm(plts: List[str], syms, add_qr: bool = False) -> List[str]:
+    """preparing strings for messaging"""
+    # for s in plts:
+    #     s = syms + s
+    #     if add_qr:
+    #         s += " {qr}"
+    prf_l = map(lambda x: syms + x + " {}", plts)
+    return list(prf_l)
+
 def inline_pray(update: Update, context: CallbackContext):
     # TODO insert names into text dynamicly, possibly, with reply to
     # TODO switching modes (business, friendly, sarcasm, etc.)
@@ -215,26 +224,20 @@ def inline_pray(update: Update, context: CallbackContext):
     polite_thx = ["Thank you so much for everything.", "Thank you very much for your support.",
                   "Thank you, that was very kind of you. ", "I sincerely thank you.",
                   "I wouldn't have made it without you."]
-    polite_apl = ["Dear sir, ", "Dear Gentleman, ", "Dear Citizen, "]
+    polite_apl = ["Dear sir ", "Dear Gentleman ", "Dear Citizen "]
     polite_greeting = ["I wish you a good day!", "Incredibly glad to see you!",
                        "Greetings from the bottom of my heart!", "Hello, thanks for the contact!", ]
     polite_goodbuys = ["Hope we meet again soon.", "I was very happy to meet you!",
                        "I would like our communication to remain as warm"]
+
+    polite_greeting =  prefrm(polite_greeting, " 👋🏼 ")
+    polite_apl = prefrm(polite_apl, " 👉🏽 👇🏾 👈🏻 ", True)
+    polite_pls = prefrm(polite_pls, "🙏🏼 🥺 ", True)
+    polite_thx = prefrm(polite_thx, "☺️")
+    polite_goodbuys = prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
+
     all_p = [polite_greeting + polite_apl + polite_pls + polite_thx + polite_goodbuys]
     all_p_sl = itertools.chain.from_iterable(all_p)
-
-    def prefrm(plts: List[str], syms, add_qr: bool = False) -> None:
-        """preparing strings for messaging"""
-        for s in plts:
-            s = syms + s
-            if add_qr:
-                s += " {qr}"
-
-    prefrm(polite_greeting, " 👋🏼 ")
-    prefrm(polite_apl, " 👉🏽 👇🏾 👈🏻 ", True)
-    prefrm(polite_pls, "🙏🏼 🥺 ", True)
-    prefrm(polite_thx, "☺️")
-    prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
     # TODO make preview of possible texts via results_que:
     # results will be made of matches, then just popular or genral
     # results = [], then .append for each func call it will return new result
@@ -242,12 +245,12 @@ def inline_pray(update: Update, context: CallbackContext):
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Eloquent good buys",
-            input_message_content=InputTextMessageContent(" 👋🏼 🕺🏽 " + random.choice(polite_goodbuys) + " " + query)
+            input_message_content=InputTextMessageContent(random.choice(polite_goodbuys).format(query))
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Please <your text>",
-            input_message_content=InputTextMessageContent("🙏🏼 🥺 " + random.choice(polite_pls) + " " + query)
+            input_message_content=InputTextMessageContent(random.choice(polite_pls).format(query))
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
@@ -255,17 +258,17 @@ def inline_pray(update: Update, context: CallbackContext):
             # input_message_content=InputTextMessageContent(
             #     f"*{escape_markdown(query)}*", parse_mode=ParseMode.MARKDOWN
             # ),
-            input_message_content=InputTextMessageContent("☺️" + random.choice(polite_thx) + " " + query)
+            input_message_content=InputTextMessageContent(random.choice(polite_thx).format(query))
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Address, <your text>",
-            input_message_content=InputTextMessageContent(" 👉🏽 👇🏾 👈🏻 " + random.choice(polite_apl) + " " + query)
+            input_message_content=InputTextMessageContent(random.choice(polite_apl).format(query))
         ),
         InlineQueryResultArticle(
             id=str(uuid4()),
             title="Eloquent greetings",
-            input_message_content=InputTextMessageContent(" 👋🏼 " + random.choice(polite_greeting) + " " + query)
+            input_message_content=InputTextMessageContent(random.choice(polite_greeting).format(query))
         )
     ]
 
@@ -281,7 +284,7 @@ def inline_pray(update: Update, context: CallbackContext):
                                         input_message_content=InputTextMessageContent(fl_phrs.format(query)))
                for fl_phrs in fnd(query)]
 
-    if query == "":
+    if query == "" or results == []:
         update.inline_query.answer(results_on_empt)
     else:
         update.inline_query.answer(results)
