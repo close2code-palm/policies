@@ -19,7 +19,7 @@ API_KEY = TELEGRAM_BOT_API_KEY
 # feedback about product
 
 OWN, THEME, KBSWITCH, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(7)
-ADD_P, DELETE_P, SHOW_P = range(3)
+ADD_P, DELETE_P, SHOW_P, NEW_P, DLT_I = range(3)
 
 ASKED_THROUGH = False
 
@@ -214,10 +214,12 @@ def show_cstms(update: Update, cntxt: CallbackContext):
 def dlt_cstm(update: Update, cntxt: CallbackContext):
     """releasing the space for custom phrases
     lets to delete by the key"""
+    return DLT_I
 
 
 def add_to_dict(update: Update, cntxt: CallbackContext):
     """adds some custom phrases for user or group of users"""
+    return ADD_P
 
 
 def inline_pray(update: Update, context: CallbackContext):
