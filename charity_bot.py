@@ -19,6 +19,7 @@ API_KEY = TELEGRAM_BOT_API_KEY
 # feedback about product
 
 OWN, THEME, KBSWITCH, DONATE, TALK_W_AUTHOR, MODERATE, SAVE_PRIVACY = range(7)
+ADD_P, DELETE_P, SHOW_P = range(3)
 
 ASKED_THROUGH = False
 
@@ -138,7 +139,7 @@ def wantl(updt: Update, ctxt: CallbackContext):
     return SAVE_PRIVACY
 
 
-def save(updt: Update, ctxt: CallbackContext):
+def save_db(updt: Update, ctxt: CallbackContext):
     """Database writing answers for statistic.
     Writes data regarding user's choice"""
     updt.message.reply_text('🌈 As you wish ✨',
@@ -193,32 +194,41 @@ def op_ends(update: Update, contxt: CallbackContext):
     pass
 
 
-def custom_sample(update: Update, cntxt: CallbackContext):
-    """adds some custom phrases for user or group of users"""
-
-
-def prefrm(plts: List[str], syms, add_qr: bool = False) -> List[str]:
+def _prefrm(plts: List[str], syms, add_qr: bool = False) -> List[str]:
     """preparing strings for messaging"""
-    # for s in plts:
-    #     s = syms + s
-    #     if add_qr:
-    #         s += " {qr}"
     prf_l = map(lambda x: syms + x + " {}", plts)
     return list(prf_l)
+
+
+def cstm_menu(update: Update, cntxt: CallbackContext):
+    a_s_d_cust_kb_mu = [['➕ Add', '🗒 Show'], ['❌ Delete']]
+    cstmz_kb = ReplyKeyboardMarkup(a_s_d_cust_kb_mu,
+                                   one_time_keyboard=False, input_field_placeholder='Improving...')
+    update.message.reply_text('Please, operate with customization.', reply_markup=cstmz_kb)
+
+
+def show_cstms(update: Update, cntxt: CallbackContext):
+    """Listing all available patterns for user"""
+
+
+def dlt_cstm(update: Update, cntxt: CallbackContext):
+    """releasing the space for custom phrases
+    lets to delete by the key"""
+
+
+def add_to_dict(update: Update, cntxt: CallbackContext):
+    """adds some custom phrases for user or group of users"""
+
 
 def inline_pray(update: Update, context: CallbackContext):
     # TODO insert names into text dynamicly, possibly, with reply to
     # TODO switching modes (business, friendly, sarcasm, etc.)
     """Create some texts which made from affirmations, auto-training and self-hypnosis"""
-    # TODO make responsible for requested phrase, send via preview
     # text preview not implemented in this api
     # inl_qur = update.inline_query.query
 
+    # TODO add conversation branch which wil handle custom phrases
     query = update.inline_query.query
-    # if query == "":
-    #     return
-    # TODO english payloads, to make THIS BROBOT more accessible and usefull. and sure, to keep style clean
-    # TODO add emojis
     polite_pls = ["Be so kind ", "Please excuse me ", "Would you be so kind ",
                   "Could you please ", "We would appreciate it if you would "]
     polite_thx = ["Thank you so much for everything.", "Thank you very much for your support.",
@@ -229,18 +239,20 @@ def inline_pray(update: Update, context: CallbackContext):
                        "Greetings from the bottom of my heart!", "Hello, thanks for the contact!", ]
     polite_goodbuys = ["Hope we meet again soon.", "I was very happy to meet you!",
                        "I would like our communication to remain as warm"]
+    polite_cstms = context.user_data.get('cstm', [])
 
-    polite_greeting =  prefrm(polite_greeting, " 👋🏼 ")
-    polite_apl = prefrm(polite_apl, " 👉🏽 👇🏾 👈🏻 ", True)
-    polite_pls = prefrm(polite_pls, "🙏🏼 🥺 ", True)
-    polite_thx = prefrm(polite_thx, "☺️")
-    polite_goodbuys = prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
+    polite_greeting = _prefrm(polite_greeting, " 👋🏼 ")
+    polite_apl = _prefrm(polite_apl, " 👉🏽 👇🏾 👈🏻 ", True)
+    polite_pls = _prefrm(polite_pls, "🙏🏼 🥺 ", True)
+    polite_thx = _prefrm(polite_thx, "☺️")
+    polite_goodbuys = _prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
 
-    all_p = [polite_greeting + polite_apl + polite_pls + polite_thx + polite_goodbuys]
+    all_p = [polite_greeting + polite_apl + polite_pls + polite_thx + polite_goodbuys + polite_cstms]
     all_p_sl = itertools.chain.from_iterable(all_p)
     # TODO make preview of possible texts via results_que:
     # results will be made of matches, then just popular or genral
     # results = [], then .append for each func call it will return new result
+    # todo self-ad link for custom, settings and more =)
     results_on_empt = [
         InlineQueryResultArticle(
             id=str(uuid4()),
@@ -269,7 +281,12 @@ def inline_pray(update: Update, context: CallbackContext):
             id=str(uuid4()),
             title="Eloquent greetings",
             input_message_content=InputTextMessageContent(random.choice(polite_greeting).format(query))
-        )
+        ),
+        InlineQueryResultArticle(
+            id=str(uuid4()),
+            title="Bot chat. Feedback, set and involve.",
+            input_message_content=InputTextMessageContent("💬 Bot chat appears here: @smart_abbot")
+        ),
     ]
 
     def fnd(qr: query) -> List[str]:
@@ -304,6 +321,17 @@ def main():
     # thm_filter = Filters.regex("^(🎰 🎯 Gaming 🎭 🎲 |📡Cyberspace🪙|🎸🎧Sound🎼🎷|"
     #                            "🤼Competitive⛷|📖Reading📚|🥕Gastronomy🫑)$")
 
+    # Todo customize
+    cstmztn = ConversationHandler(
+        entry_points=[CommandHandler('tweak', cstm_menu)],
+        states={
+            ADD_P: [
+                MessageHandler(Filters.regex("^➕ Add$"), add_to_dict),
+                MessageHandler(Filters.regex("^🗒 Show$"), show_cstms),
+                MessageHandler(Filters.regex("^❌ Delete$"), dlt_cstm),
+            ]
+        }
+    )
     yn_questnry = ConversationHandler(
         entry_points=[CommandHandler('wants', wants)],
         states={
@@ -313,7 +341,7 @@ def main():
             DONATE: [MessageHandler(yn_filter, want3)],
             TALK_W_AUTHOR: [MessageHandler(yn_filter, want4)],
             MODERATE: [MessageHandler(yn_filter, wantl)],
-            SAVE_PRIVACY: [MessageHandler(yn_filter, save)],
+            SAVE_PRIVACY: [MessageHandler(yn_filter, save_db)],
         },
         fallbacks=[],
         allow_reentry=True,
