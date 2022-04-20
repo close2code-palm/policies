@@ -235,6 +235,9 @@ def show_cstms(update: Update, cntxt: CallbackContext):
     """Listing all available patterns for user"""
     chc = update.message
     cstms = _get_cstms(chc.from_user.id)
+    if not cstms:
+        chc.reply_text("There is nothing to show.")
+        return ConversationHandler.END
     lst_t_shw = [cstm.decode('utf-8') for cstm in cstms]
     ot_t_shw = "\n& ".join(lst_t_shw)
     chc.reply_text(f'Your custom choices are: {ot_t_shw}')
@@ -246,6 +249,9 @@ def dlt_cstm(update: Update, cntxt: CallbackContext):
     lets to delete by the key"""
     chc = update.message
     cstms = _get_cstms(chc.from_user.id)
+    if not cstms:
+        chc.reply_text("There is nothing to delete.")
+        return ConversationHandler.END
     cstms_t_dlt_mu = []
     for cstm in cstms:
         cstm = cstm.decode('utf-8')
