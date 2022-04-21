@@ -15,7 +15,7 @@ from config import TELEGRAM_BOT_API_KEY, DB_UN, DB_PW
 
 API_KEY = TELEGRAM_BOT_API_KEY
 
-reedis = redis.Redis()
+reedis = redis.Redis(host='172.18.0.2')
 
 # TODO Separate 3 different bots: inliner, hypnotalker and charity_taker
 
@@ -50,6 +50,7 @@ yn_kb_mu = [['✅  Yes', '❌  No'], ["💁🏽  I don't know"]]
 def start(update: Update, context: CallbackContext):
     # TODO make interface more guided through usability, not flashing from start
     # TODO place check for already registered, to UPDATE or restrict
+    # TODO add new user to notify_list
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
@@ -73,8 +74,9 @@ def info(update: Update, context: CallbackContext):
     update.message.reply_text("👯 🤖 This Bot was made to save human "
                               "wishes and lives with a politness."
                               " Made just by help of Maecenas's❤ partials.\n "
-                              "You can buy me a coffee! ☕️"
-                              "https://www.buymeacoffee.com/greettheworldK")
+                              # "You can buy me a coffee! ☕️"
+                              # "https://www.buymeacoffee.com/greettheworldK"
+                              )
 
     update.message.reply_text("💻 Author: JKD. Made for public use."
                               "📱 You can contact\n🏄🏽‍♂ owner here: @lolyge "
@@ -128,6 +130,7 @@ def want2(updt: Update, ctxt: CallbackContext):
 
 def want2_to_3(updt: Update, ctxt: CallbackContext):
     """Makes transition to reply from inline"""
+    # criminal raccoon handshake
     updt.message.reply_sticker('CAACAgIAAxkBAAEDYmZhpUEeM46qYBlLZU1ifmG3yDOUHwACYAYAAvoLtgg_BZcxRs21uyIE')
     yn_keyboard = ReplyKeyboardMarkup(yn_kb_mu, resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
@@ -170,9 +173,9 @@ def save_db(updt: Update, ctxt: CallbackContext):
     conn = psycopg2.connect(database='chares',
                             user=DB_UN,
                             password=DB_PW,
-                            # host='192.168.0.162',
+                            host='192.168.0.162',
                             # host='0.0.0.0',
-                            host='127.0.0.1',
+                            # host='127.0.0.1',
                             port='5433')
     cur = conn.cursor()
 
