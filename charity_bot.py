@@ -186,14 +186,13 @@ def save_db(updt: Update, ctxt: CallbackContext):
     if user_dt_in_db is not None:
         # TODO bug with overwritting existing user answers from user to DB
         # is it still a problem
-        raw_sql = '''UPDATE public.char_wants 
+        raw_sql = '''UPDATE public.char_wants
         SET w_t_own = %s,
-            w_t_pay = %s, 
+            w_t_pay = %s,
             theme = %s,
             w_t_contact = %s,
             w_t_direct = %s
         WHERE user_id = %s;'''
-
         cur.execute(raw_sql, sql_arg_lst)
 
     else:

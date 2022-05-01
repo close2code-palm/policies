@@ -12,3 +12,7 @@ services:
       # REDIS_PORT: 6379
   redis:
     image: 'redis'
+    volumes:
+      - redis_data:/data
+volumes:
+  redis_data:
