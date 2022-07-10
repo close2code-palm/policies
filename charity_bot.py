@@ -15,7 +15,7 @@ from config import TELEGRAM_BOT_API_KEY, DB_UN, DB_PW
 
 API_KEY = TELEGRAM_BOT_API_KEY
 
-reedis = redis.Redis()
+reedis = redis.Redis(host='172.18.0.2')
 
 # TODO Separate 3 different bots: inliner, hypnotalker and charity_taker
 
@@ -33,8 +33,8 @@ answers2human = {
     "💁🏽  I don't know": IDK
 }
 
-#TODO add donators list through cb_ctxt
-#TODO add more gifs and stickers and, maybe, sounds
+# TODO add donators list through cb_ctxt
+# TODO add more gifs and stickers and, maybe, sounds
 user_wish = {
     'theme': 'Reading',
     'to_own': IDK,
@@ -50,6 +50,7 @@ yn_kb_mu = [['✅  Yes', '❌  No'], ["💁🏽  I don't know"]]
 def start(update: Update, context: CallbackContext):
     # TODO make interface more guided through usability, not flashing from start
     # TODO place check for already registered, to UPDATE or restrict
+    # TODO add new user to notify_list
     """"Starts the conversetion from greetings and asks about interests to be promoted"""
     # Some information push for coordinatcions or news by interest
 
@@ -73,8 +74,9 @@ def info(update: Update, context: CallbackContext):
     update.message.reply_text("👯 🤖 This Bot was made to save human "
                               "wishes and lives with a politness."
                               " Made just by help of Maecenas's❤ partials.\n "
-                              "You can buy me a coffee! ☕️"
-                              "https://www.buymeacoffee.com/greettheworldK")
+                              # "You can buy me a coffee! ☕️"
+                              # "https://www.buymeacoffee.com/greettheworldK"
+                              )
 
     update.message.reply_text("💻 Author: JKD. Made for public use."
                               "📱 You can contact\n🏄🏽‍♂ owner here: @lolyge "
@@ -128,6 +130,7 @@ def want2(updt: Update, ctxt: CallbackContext):
 
 def want2_to_3(updt: Update, ctxt: CallbackContext):
     """Makes transition to reply from inline"""
+    # criminal raccoon handshake
     updt.message.reply_sticker('CAACAgIAAxkBAAEDYmZhpUEeM46qYBlLZU1ifmG3yDOUHwACYAYAAvoLtgg_BZcxRs21uyIE')
     yn_keyboard = ReplyKeyboardMarkup(yn_kb_mu, resize_keyboard=True,
                                       one_time_keyboard=False, input_field_placeholder='Be grace to yourselves...')
@@ -156,6 +159,7 @@ def wantl(updt: Update, ctxt: CallbackContext):
     user_wish['to_direct'] = answers2human[updt.message.text]
     return SAVE_PRIVACY
 
+
 # todo work on this function composition
 def save_db(updt: Update, ctxt: CallbackContext):
     """Database writing answers for statistic.
@@ -170,9 +174,9 @@ def save_db(updt: Update, ctxt: CallbackContext):
     conn = psycopg2.connect(database='chares',
                             user=DB_UN,
                             password=DB_PW,
-                            # host='192.168.0.162',
+                            host='192.168.0.162',
                             # host='0.0.0.0',
-                            host='127.0.0.1',
+                            # host='127.0.0.1',
                             port='5433')
     cur = conn.cursor()
 
@@ -183,14 +187,13 @@ def save_db(updt: Update, ctxt: CallbackContext):
     if user_dt_in_db is not None:
         # TODO bug with overwritting existing user answers from user to DB
         # is it still a problem
-        raw_sql = '''UPDATE public.char_wants 
+        raw_sql = '''UPDATE public.char_wants
         SET w_t_own = %s,
-            w_t_pay = %s, 
+            w_t_pay = %s,
             theme = %s,
             w_t_contact = %s,
             w_t_direct = %s
         WHERE user_id = %s;'''
-
         cur.execute(raw_sql, sql_arg_lst)
 
     else:
@@ -230,22 +233,30 @@ def cstm_menu(update: Update, cntxt: CallbackContext):
 def _get_cstms(usr_id):
     return reedis.smembers(usr_id)
 
+
 # TODO add emty checks
 def show_cstms(update: Update, cntxt: CallbackContext):
     """Listing all available patterns for user"""
     chc = update.message
     cstms = _get_cstms(chc.from_user.id)
+    if not cstms:
+        chc.reply_text("There is nothing to show.")
+        return ConversationHandler.END
     lst_t_shw = [cstm.decode('utf-8') for cstm in cstms]
     ot_t_shw = "\n& ".join(lst_t_shw)
     chc.reply_text(f'Your custom choices are: {ot_t_shw}')
     return ConversationHandler.END
 
+
 def dlt_cstm(update: Update, cntxt: CallbackContext):
-    #todo make checkboxes
+    # todo make checkboxes
     """releasing the space for custom phrases
     lets to delete by the key"""
     chc = update.message
     cstms = _get_cstms(chc.from_user.id)
+    if not cstms:
+        chc.reply_text("There is nothing to delete.")
+        return ConversationHandler.END
     cstms_t_dlt_mu = []
     for cstm in cstms:
         cstm = cstm.decode('utf-8')
@@ -257,7 +268,8 @@ def dlt_cstm(update: Update, cntxt: CallbackContext):
                    reply_markup=InlineKeyboardMarkup(inline_keyboard=cstms_t_dlt_mu))
     return DLT_I
 
-def rm_frm_rds(updt:Update, cntxt: CallbackContext):
+
+def rm_frm_rds(updt: Update, cntxt: CallbackContext):
     updt_cb_q = updt.callback_query
     p2r = updt_cb_q.data
     if p2r is not None:
@@ -270,6 +282,7 @@ def ask_f_cstms(update: Update, cntxt: CallbackContext):
     """adds some custom phrases for user or group of users"""
     update.message.reply_text('Please, enter your brand expression:')
     return ADD_P
+
 
 def add_t_cstms(update: Update, cntxt: CallbackContext):
     """Writes the Person's exression to db"""
@@ -287,7 +300,6 @@ def add_t_cstms(update: Update, cntxt: CallbackContext):
         reedis.sadd(cr_usr_id, nw_xprsn)
         incm_msg.reply_text("Your new tricky words are availaible now!")
     return ConversationHandler.END
-
 
 
 def inline_pray(update: Update, context: CallbackContext):
@@ -316,7 +328,7 @@ def inline_pray(update: Update, context: CallbackContext):
     polite_thx = _prefrm(polite_thx, "☺️")
     polite_goodbuys = _prefrm(polite_goodbuys, " 👋🏼 🕺🏽 ")
 
-    #customs are additional feature
+    # customs are additional feature
     cstms = reedis.smembers(update.inline_query.from_user.id)
     cstms = [cstm.decode('utf-8') for cstm in cstms]
     all_p = [polite_greeting + polite_apl + polite_pls + polite_thx + polite_goodbuys + cstms]
@@ -380,7 +392,6 @@ def inline_pray(update: Update, context: CallbackContext):
 # TODO need to add customization, person-styled scripts
 
 def main():
-
     """Dirty machinery"""
     updater = Updater(API_KEY)
 
